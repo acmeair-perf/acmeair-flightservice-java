@@ -1,4 +1,4 @@
-FROM open-liberty:microProfile3
+FROM acmeair/open-liberty:kernel-java8-openjdk-profiler
 
 # Install opentracing usr feature
 USER 0
