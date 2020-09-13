@@ -52,15 +52,15 @@ public class FlightLivenessHealthCheck implements HealthCheck {
   }
 
   private boolean isServiceReachable() {
-    try {
-      Client client = ClientBuilder.newClient();
-      client
-      .target("http://" + hostname + ":" + port + "/")
-      .request();
+	Client client = ClientBuilder.newClient();
+    try {  
+      client.target("http://" + hostname + ":" + port + "/").request();
 
       return true;
     } catch (Exception ex) {
       return false;
+    } finally {
+    	client.close();
     }
   }
 }
