@@ -18,8 +18,6 @@ package com.acmeair.config;
 
 import com.acmeair.service.FlightService;
 
-import java.util.logging.Logger;
-
 import javax.inject.Inject;
 import javax.json.Json;
 import javax.json.JsonArray;
@@ -28,6 +26,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
+import java.util.logging.Logger;
 
 @Path("/config")
 public class FlightConfiguration {
@@ -66,10 +65,11 @@ public class FlightConfiguration {
   @Produces("application/json")
   public Response countFlightSegments() {
     try {
-      String  count = flightService.countFlightSegments().toString();
+      Long count = flightService.countFlightSegments();
       return Response.ok(count).build();
     } catch (Exception e) {
       e.printStackTrace();
+      logger.severe(e.getMessage());
       return Response.ok(-1).build();
     }
   }
@@ -87,6 +87,7 @@ public class FlightConfiguration {
       return Response.ok(count).build();
     } catch (Exception e) {
       e.printStackTrace();
+      logger.severe(e.getMessage());
       return Response.ok(-1).build();
     }
   }
@@ -99,7 +100,7 @@ public class FlightConfiguration {
   @Produces("application/json")
   public Response getActiveDataServiceInfo() {
     try {
-      logger.fine("Get active Data Service info");
+      logger.info("Get active Data Service info");
       return  Response.ok(flightService.getServiceType()).build();
     } catch (Exception e) {
       e.printStackTrace();

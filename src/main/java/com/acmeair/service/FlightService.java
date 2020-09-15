@@ -17,14 +17,7 @@
 package com.acmeair.service;
 
 import com.acmeair.AirportCodeMapping;
-
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -33,8 +26,12 @@ import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
-
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
 
 @ApplicationScoped
 public abstract class FlightService {
@@ -46,8 +43,7 @@ public abstract class FlightService {
   private static final JsonReaderFactory factory = Json.createReaderFactory(null);
   protected static final Logger logger =  Logger.getLogger(FlightService.class.getName());  
 
-  // TODO:need to find a way to invalidate these maps
-  protected static ConcurrentHashMap<String, String> originAndDestPortToSegmentCache = 
+  protected static ConcurrentHashMap<String, String> originAndDestPortToSegmentCache =
           new ConcurrentHashMap<String,String>();
   protected static ConcurrentHashMap<String, List<String>> flightSegmentAndDataToFlightCache = 
           new ConcurrentHashMap<String,List<String>>();
@@ -66,9 +62,7 @@ public abstract class FlightService {
    */
   public String getFlightByFlightId(String flightId, String flightSegment) {
     try {
-      if (logger.isLoggable(Level.FINE)) {
-        logger.fine("Book flights with " + flightId + " and " + flightSegment);
-      }
+      logger.info("Book flights with " + flightId + " and " + flightSegment);
       if (useFlightDataRelatedCaching) {
         String flight = flightPKtoFlightCache.get(flightId);
         if (flight == null) {
@@ -94,10 +88,8 @@ public abstract class FlightService {
    */
   public List<String> getFlightByAirportsAndDepartureDate(String fromAirport,
           String toAirport, Date deptDate) {
-    if (logger.isLoggable(Level.FINE)) {
-      logger.fine("Search for flights from " + fromAirport + " to " + toAirport + " on " 
+      logger.info("Search for flights from " + fromAirport + " to " + toAirport + " on "
               + deptDate.toString());
-    }
 
     String originPortAndDestPortQueryString = fromAirport + toAirport;
     String segment = null;
@@ -111,9 +103,7 @@ public abstract class FlightService {
     } else {
       segment = getFlightSegment(fromAirport, toAirport);
     }
-    if (logger.isLoggable(Level.FINE)) {
-      logger.fine("Segment " + segment);
-    }
+      logger.info("Segment " + segment);
     // cache flights that not available (checks against sentinel value above indirectly)
     try {
       if (segment == "") {
@@ -124,54 +114,38 @@ public abstract class FlightService {
       JsonObject segmentJson = jsonReader.readObject();
       jsonReader.close();
       
-      if (logger.isLoggable(Level.FINE)) {
-        logger.fine("Segment in JSON " + segmentJson);
-      }
-      
+      logger.info("Segment in JSON " + segmentJson);
+
       String segId = segmentJson.getString("_id");
       if (segId == null) {
-        if (logger.isLoggable(Level.FINE)) {
-          logger.fine("Segment is null");
-        }
-        
-        return new ArrayList<String>(); 
+        logger.info("Segment is null");
+        return new ArrayList<String>();
       }
 
       String flightSegmentIdAndScheduledDepartureTimeQueryString = segId + deptDate.toString();
-      if (logger.isLoggable(Level.FINE)) {
-        logger.fine("flightSegmentIdAndScheduledDepartureTimeQueryString " 
+        logger.info("flightSegmentIdAndScheduledDepartureTimeQueryString "
                 + flightSegmentIdAndScheduledDepartureTimeQueryString);
-      }
       if (useFlightDataRelatedCaching) {
         List<String> flights = flightSegmentAndDataToFlightCache
                 .get(flightSegmentIdAndScheduledDepartureTimeQueryString);
         if (flights == null) {
           flights = getFlightBySegment(segment, deptDate);
-          if (logger.isLoggable(Level.FINE)) {
-            logger.fine("flights search results if flights cache is null " + flights.toString());
-          }
+            logger.info("flights search results if flights cache is null " + flights.toString());
 
           flightSegmentAndDataToFlightCache.putIfAbsent(
                   flightSegmentIdAndScheduledDepartureTimeQueryString, flights);
         }
-        if (logger.isLoggable(Level.FINEST)) {
-          logger.finest("Returning " + flights);
-        }
+          logger.info("Returning " + flights);
         return flights;
       } else {
-        if (logger.isLoggable(Level.FINE)) {
-          logger.fine("useFlightDataRelatedCaching is false ");
-        }
+          logger.info("useFlightDataRelatedCaching is false ");
 
         List<String> flights = getFlightBySegment(segment, deptDate);
-        if (logger.isLoggable(Level.FINEST)) {
-          logger.finest("Returning " + flights);
-        }
+          logger.info("Returning " + flights);
         return flights;
       }
     } catch (Exception e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+        e.printStackTrace();
       return null;
     }
   }
@@ -230,7 +204,7 @@ public abstract class FlightService {
             
       if (miles == null) {               
         miles = getRewardMilesFromSegment(segmentId);
-        if (miles != null && miles != null) {
+        if (miles != null) {
           flightSegmentIdtoRewardsCache.putIfAbsent(segmentId,miles);
         }
       }

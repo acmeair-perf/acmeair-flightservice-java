@@ -16,32 +16,20 @@
 
 package com.acmeair.mongo;
 
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientOptions;
-import com.mongodb.MongoClientURI;
-import com.mongodb.MongoCredential;
-import com.mongodb.ServerAddress;
+import com.mongodb.*;
 import com.mongodb.client.MongoDatabase;
-
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.logging.Logger;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
-import javax.json.JsonReaderFactory;
-
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import javax.json.*;
+import java.io.StringReader;
+import java.util.Optional;
+import java.util.logging.Logger;
 
 @ApplicationScoped
-public class ConnectionManager implements MongoConstants {
+public class ConnectionManager {
  
   private static final JsonReaderFactory factory = Json.createReaderFactory(null);
 
@@ -182,17 +170,15 @@ public class ConnectionManager implements MongoConstants {
           if ((!mongoUsername.isPresent()) || (!mongoPassword.isPresent())) {
             mongoClient = new MongoClient(dbAddress, builtOptions);
           } else {
-            List<MongoCredential> credentials = new ArrayList<>();
-            credentials.add(MongoCredential
-                .createCredential(mongoUsername.get(), mongoDbName, 
-                    mongoPassword.get().toCharArray()));
+            MongoCredential credentials = MongoCredential
+                .createCredential(mongoUsername.get(), mongoDbName, mongoPassword.get().toCharArray());
             mongoClient = new MongoClient(dbAddress, credentials, builtOptions);
           }
         } else {
           JsonObject mongoService = (JsonObject) mongoServiceArray.get(0);
           JsonObject credentials = (JsonObject) mongoService.get("credentials");
           String url = (String) credentials.getString("url");
-          logger.fine("service url = " + url);
+          logger.info("service url = " + url);
           MongoClientURI mongoUri = new MongoClientURI(url, options);
           mongoClient = new MongoClient(mongoUri);
           mongoDbName = mongoUri.getDatabase();
@@ -207,10 +193,8 @@ public class ConnectionManager implements MongoConstants {
         if ((!mongoUsername.isPresent()) || (!mongoPassword.isPresent())) {
           mongoClient = new MongoClient(dbAddress, builtOptions);
         } else {
-          List<MongoCredential> credentials = new ArrayList<>();
-          credentials.add(MongoCredential
-              .createCredential(mongoUsername.get(), mongoDbName, 
-                  mongoPassword.get().toCharArray()));
+          MongoCredential credentials = MongoCredential
+              .createCredential(mongoUsername.get(), mongoDbName, mongoPassword.get().toCharArray());
           mongoClient = new MongoClient(dbAddress, credentials, builtOptions);
         }
       }

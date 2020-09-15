@@ -16,26 +16,15 @@
 
 package com.acmeair.mongo.services;
 
-import static com.mongodb.client.model.Filters.eq;
-
 import com.acmeair.AirportCodeMapping;
 import com.acmeair.mongo.ConnectionManager;
-import com.acmeair.mongo.MongoConstants;
 import com.acmeair.service.FlightService;
-import com.acmeair.service.KeyGenerator;
 import com.mongodb.BasicDBObject;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
-
 import com.mongodb.util.JSON;
-
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.bson.Document;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -44,11 +33,18 @@ import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import org.bson.Document;
+import static com.mongodb.client.model.Filters.eq;
 
 @ApplicationScoped
-public class FlightServiceImpl extends FlightService implements  MongoConstants {
+public class FlightServiceImpl extends FlightService {
 
   private static final Logger logger = Logger.getLogger(FlightServiceImpl.class.getName()); 
   private static final JsonReaderFactory factory = Json.createReaderFactory(null);
@@ -58,9 +54,6 @@ public class FlightServiceImpl extends FlightService implements  MongoConstants 
   private MongoCollection<Document> airportCodeMapping;
 
   private Boolean isPopulated = false;
-
-  @Inject
-  KeyGenerator keyGenerator;
 
   @Inject
   ConnectionManager connectionManager;
@@ -101,9 +94,7 @@ public class FlightServiceImpl extends FlightService implements  MongoConstants 
       return flightSegment.find(new BasicDBObject("originPort", fromAirport)
           .append("destPort", toAirport)).first().toJson();
     } catch (java.lang.NullPointerException e) {
-      if (logger.isLoggable(Level.FINE)) {
-        logger.fine("getFlghtSegment returned no flightSegment available");
-      }
+        logger.warning("getFlghtSegment returned no flightSegment available");
       return "";
     }
   }
@@ -120,12 +111,8 @@ public class FlightServiceImpl extends FlightService implements  MongoConstants 
       return segmentJson.getJsonNumber("miles").longValue();
 
     } catch (java.lang.NullPointerException e) {
-      if (logger.isLoggable(Level.FINE)) {
-        logger.fine("getFlghtSegment returned no flightSegment available");
-      }
-
+        logger.warning("getFlghtSegment returned no flightSegment available");
     } catch (Exception e) {
-      // TODO Auto-generated catch block
       e.printStackTrace();
     }
     return null;
@@ -141,7 +128,7 @@ public class FlightServiceImpl extends FlightService implements  MongoConstants 
 
       if (deptDate != null) {
         if (logger.isLoggable(Level.FINE)) {
-          logger.fine("getFlghtBySegment Search String : " 
+          logger.info("getFlghtBySegment Search String : "
               + new BasicDBObject("flightSegmentId", segmentJson.getString("_id"))
               .append("scheduledDepartureTime", deptDate).toJson());
         }
@@ -155,11 +142,7 @@ public class FlightServiceImpl extends FlightService implements  MongoConstants 
       try {
         while (cursor.hasNext()) {
           Document tempDoc = cursor.next();
-
-          if (logger.isLoggable(Level.FINE)) {
-            logger.fine("getFlghtBySegment Before : " + tempDoc.toJson());
-          }
-
+          logger.info("getFlghtBySegment Before : " + tempDoc.toJson());
           Date deptTime = (Date)tempDoc.get("scheduledDepartureTime");
           Date arvTime = (Date)tempDoc.get("scheduledArrivalTime");
           tempDoc.remove("scheduledDepartureTime");
@@ -167,12 +150,7 @@ public class FlightServiceImpl extends FlightService implements  MongoConstants 
           tempDoc.remove("scheduledArrivalTime");
           tempDoc.append("scheduledArrivalTime", arvTime.toString());
           tempDoc.append("flightSegment", JSON.parse(segment));
-
-
-          if (logger.isLoggable(Level.FINE)) {
-            logger.fine("getFlghtBySegment after : " + tempDoc.toJson());
-          }
-
+          logger.info("getFlghtBySegment after : " + tempDoc.toJson());
           flights.add(tempDoc.toJson());
 
         }
@@ -181,7 +159,6 @@ public class FlightServiceImpl extends FlightService implements  MongoConstants 
       }
       return flights;
     } catch (Exception e) {
-      // TODO Auto-generated catch block
       e.printStackTrace();
       return null;
     }
@@ -206,7 +183,7 @@ public class FlightServiceImpl extends FlightService implements  MongoConstants 
       int firstClassBaseCost, int economyClassBaseCost,
       int numFirstClassSeats, int numEconomyClassSeats,
       String airplaneTypeId) {
-    String id = keyGenerator.generate().toString();
+    String id = UUID.randomUUID().toString();
     Document flightDoc = new Document("_id", id)
         .append("firstClassBaseCost", firstClassBaseCost)
         .append("economyClassBaseCost", economyClassBaseCost)
